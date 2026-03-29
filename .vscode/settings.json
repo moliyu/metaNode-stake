@@ -1,0 +1,11 @@
+{
+  // 启⽤路径补全
+  "editor.quickSuggestions": {
+    "strings": true // 在字符串中启⽤补全
+  },
+  // 格式化配置
+  "[solidity]": {
+    "editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+  },
+  "editor.formatOnSave": true
+}
