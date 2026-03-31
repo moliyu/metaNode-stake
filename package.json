@@ -19,5 +19,8 @@
     "hardhat": "^3.2.0",
     "mocha": "^11.7.5",
     "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "@openzeppelin/hardhat-upgrades": "4.0.0-alpha.0"
   }
 }
