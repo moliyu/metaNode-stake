@@ -11,12 +11,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
-contract MetaNodeStake is
-    Initializable,
-    UUPSUpgradeable,
-    PausableUpgradeable,
-    AccessControlUpgradeable
-{
+contract MetaNodeStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
     using Address for address;
     using Math for uint256;
@@ -80,39 +75,14 @@ contract MetaNodeStake is
         uint256 indexed minDepositeAmount,
         uint256 indexed unstakeLockedBlocks
     );
-    event UpdatePool(
-        uint256 indexed poolId,
-        uint256 indexed lastRewardBlock,
-        uint256 totalMetaNode
-    );
-    event SetPoolWeight(
-        uint256 pid,
-        uint256 poolWeight,
-        uint256 totalPoolWeight
-    );
-    event Deposite(
-        address indexed user,
-        uint256 indexed poolId,
-        uint256 amount
-    );
-    event RequestUnstake(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount
-    );
+    event UpdatePool(uint256 indexed poolId, uint256 indexed lastRewardBlock, uint256 totalMetaNode);
+    event SetPoolWeight(uint256 pid, uint256 poolWeight, uint256 totalPoolWeight);
+    event Deposite(address indexed user, uint256 indexed poolId, uint256 amount);
+    event RequestUnstake(address indexed user, uint256 indexed pid, uint256 amount);
 
-    event Withdraw(
-        address indexed user,
-        uint256 indexed poolId,
-        uint256 amount,
-        uint256 indexed blockNumber
-    );
+    event Withdraw(address indexed user, uint256 indexed poolId, uint256 amount, uint256 indexed blockNumber);
 
-    event Claim(
-        address indexed user,
-        uint256 indexed poolId,
-        uint256 MetaNodeReward
-    );
+    event Claim(address indexed user, uint256 indexed poolId, uint256 MetaNodeReward);
 
     modifier checkPid(uint256 _pid) {
         require(_pid < pool.length, "invalid pid");
@@ -135,10 +105,7 @@ contract MetaNodeStake is
         uint256 _endBlock,
         uint256 _MetaNodePerBlock
     ) public initializer {
-        require(
-            _startBlock < _endBlock && _MetaNodePerBlock > 0,
-            "Invalid params"
-        );
+        require(_startBlock < _endBlock && _MetaNodePerBlock > 0, "Invalid params");
 
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -152,9 +119,7 @@ contract MetaNodeStake is
         MetaNodePerBlock = _MetaNodePerBlock;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADE_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADE_ROLE) {}
 
     function setMetaNode(IERC20 _MetaNode) public onlyRole(ADMIN_ROLE) {
         MetaNode = _MetaNode;
@@ -191,10 +156,7 @@ contract MetaNodeStake is
     }
 
     function setStartBlock(uint256 _startBlock) public onlyRole(ADMIN_ROLE) {
-        require(
-            _startBlock < endBlock,
-            "startBlock must smaller than endBlock"
-        );
+        require(_startBlock < endBlock, "startBlock must smaller than endBlock");
         startBlock = _startBlock;
 
         emit SetStartBlock(_startBlock);
@@ -207,9 +169,7 @@ contract MetaNodeStake is
         emit SetEndBlock(_endBlock);
     }
 
-    function setMetaNodePerBlock(
-        uint256 _MetaNodePerBlock
-    ) public onlyRole(ADMIN_ROLE) {
+    function setMetaNodePerBlock(uint256 _MetaNodePerBlock) public onlyRole(ADMIN_ROLE) {
         require(_MetaNodePerBlock > 0, "MetaNodePerBlock must be positive");
         MetaNodePerBlock = _MetaNodePerBlock;
 
@@ -224,15 +184,9 @@ contract MetaNodeStake is
         bool _withUpdate
     ) public onlyRole(ADMIN_ROLE) {
         if (pool.length > 0) {
-            require(
-                _stTokenAddress != address(0),
-                "invalid staking token address"
-            );
+            require(_stTokenAddress != address(0), "invalid staking token address");
         } else {
-            require(
-                _stTokenAddress == address(0),
-                "invalid staking token address"
-            );
+            require(_stTokenAddress == address(0), "invalid staking token address");
         }
 
         require(_unstakeLockedBlocks > 0, "invalid withdraw locked blocks");
@@ -242,9 +196,7 @@ contract MetaNodeStake is
             massUpdatePools();
         }
 
-        uint256 lastRewardBlock = block.number > startBlock
-            ? block.number
-            : startBlock;
+        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
 
         totalPoolWeight = totalPoolWeight + _poolWeight;
         pool.push(
@@ -259,13 +211,7 @@ contract MetaNodeStake is
             })
         );
 
-        emit AddPool(
-            _stTokenAddress,
-            _poolWeight,
-            lastRewardBlock,
-            _minDepositeAmount,
-            _unstakeLockedBlocks
-        );
+        emit AddPool(_stTokenAddress, _poolWeight, lastRewardBlock, _minDepositeAmount, _unstakeLockedBlocks);
     }
 
     function massUpdatePools() public {
@@ -287,10 +233,7 @@ contract MetaNodeStake is
         emit UpdatePoolInfo(_pid, _minDepositeAmount, _unstakeLockedBlocks);
     }
 
-    function getMultiplier(
-        uint256 _from,
-        uint256 _to
-    ) public view returns (uint256 multiplier) {
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256 multiplier) {
         require(_from <= _to, "invalid block");
         if (_from <= startBlock) {
             _from = startBlock;
@@ -311,10 +254,8 @@ contract MetaNodeStake is
             return;
         }
 
-        uint256 totalMetaNode = (getMultiplier(
-            poolItem.lastRewardBlock,
-            block.number
-        ) * poolItem.poolWeight) / totalPoolWeight;
+        uint256 totalMetaNode = (getMultiplier(poolItem.lastRewardBlock, block.number) * poolItem.poolWeight) /
+            totalPoolWeight;
 
         uint256 stSupply = poolItem.stTokenAmount;
         if (stSupply > 0) {
@@ -327,11 +268,7 @@ contract MetaNodeStake is
         emit UpdatePool(_pid, poolItem.lastRewardBlock, totalMetaNode);
     }
 
-    function setPoolWeight(
-        uint256 _pid,
-        uint256 _poolWeight,
-        bool _withUpdate
-    ) public onlyRole(ADMIN_ROLE) {
+    function setPoolWeight(uint256 _pid, uint256 _poolWeight, bool _withUpdate) public onlyRole(ADMIN_ROLE) {
         require(_poolWeight > 0, "invalid pool weight");
 
         if (_withUpdate) {
@@ -360,55 +297,31 @@ contract MetaNodeStake is
         uint256 stSupply = pool_.stTokenAmount;
 
         if (_blockNumber > pool_.lastRewardBlock && stSupply != 0) {
-            uint256 multiplier = getMultiplier(
-                pool_.lastRewardBlock,
-                _blockNumber
-            );
-            uint256 MetaNodeForPool = (multiplier * pool_.poolWeight) /
-                totalPoolWeight;
-            accMetaNodePerST =
-                accMetaNodePerST +
-                (MetaNodeForPool * 1 ether) /
-                stSupply;
+            uint256 multiplier = getMultiplier(pool_.lastRewardBlock, _blockNumber);
+            uint256 MetaNodeForPool = (multiplier * pool_.poolWeight) / totalPoolWeight;
+            accMetaNodePerST = accMetaNodePerST + (MetaNodeForPool * 1 ether) / stSupply;
         }
 
-        return
-            (user_.stAmount * accMetaNodePerST) /
-            (1 ether) -
-            user_.finishedMetaNode +
-            user_.pendingMetaNode;
+        return (user_.stAmount * accMetaNodePerST) / (1 ether) - user_.finishedMetaNode + user_.pendingMetaNode;
     }
 
-    function pendingMetaNode(
-        uint256 _pid,
-        address _user
-    ) public view checkPid(_pid) returns (uint256) {
+    function pendingMetaNode(uint256 _pid, address _user) public view checkPid(_pid) returns (uint256) {
         return pendingMetaNodeByBlockNumber(_pid, _user, block.number);
     }
 
-    function stakingBalance(
-        uint256 _pid,
-        address _user
-    ) external view checkPid(_pid) returns (uint256) {
+    function stakingBalance(uint256 _pid, address _user) external view checkPid(_pid) returns (uint256) {
         return user[_pid][_user].stAmount;
     }
 
     function withDrawAmount(
         uint256 _pid,
         address _user
-    )
-        public
-        view
-        checkPid(_pid)
-        returns (uint256 requestAmount, uint256 pendingWithdrawAmount)
-    {
+    ) public view checkPid(_pid) returns (uint256 requestAmount, uint256 pendingWithdrawAmount) {
         User storage user_ = user[_pid][_user];
 
         for (uint256 i = 0; i < user_.requests.length; i++) {
             if (user_.requests[i].unlockBlocks < block.number) {
-                pendingWithdrawAmount =
-                    pendingWithdrawAmount +
-                    user_.requests[i].amount;
+                pendingWithdrawAmount = pendingWithdrawAmount + user_.requests[i].amount;
             }
             requestAmount = requestAmount + user_.requests[i].amount;
         }
@@ -417,12 +330,9 @@ contract MetaNodeStake is
     function depositeETH() public payable whenNotPaused {
         Pool storage pool_ = pool[ETH_PID];
 
-        require(pool_.stTokenAddress != address(0), "invalid token address");
+        require(pool_.stTokenAddress == address(0), "invalid token address");
         uint256 amount = msg.value;
-        require(
-            amount > pool_.minDepositAmount,
-            "deposite amount is too small"
-        );
+        require(amount > pool_.minDepositAmount, "deposite amount is too small");
         _deposite(ETH_PID, amount);
     }
 
@@ -452,13 +362,9 @@ contract MetaNodeStake is
             //     require(success3, "overflow");
             //     user_.pendingMetaNode = _pendingMetaNode;
             // }
-            uint256 pendingMetaNode_ = (user_.stAmount * pool_.poolWeight) /
-                (1 ether) -
-                user_.finishedMetaNode;
+            uint256 pendingMetaNode_ = (user_.stAmount * pool_.poolWeight) / (1 ether) - user_.finishedMetaNode;
             if (pendingMetaNode_ > 0) {
-                user_.pendingMetaNode =
-                    user_.pendingMetaNode +
-                    pendingMetaNode_;
+                user_.pendingMetaNode = user_.pendingMetaNode + pendingMetaNode_;
             }
         }
 
@@ -468,38 +374,23 @@ contract MetaNodeStake is
 
         pool_.stTokenAmount += _amount;
 
-        user_.finishedMetaNode =
-            (user_.stAmount * pool_.accMetaNodePerST) /
-            (1 ether);
+        user_.finishedMetaNode = (user_.stAmount * pool_.accMetaNodePerST) / (1 ether);
 
         emit Deposite(msg.sender, _pid, _amount);
     }
 
-    function deposite(
-        uint256 _pid,
-        uint256 _amount
-    ) public whenNotPaused checkPid(_pid) {
+    function deposite(uint256 _pid, uint256 _amount) public whenNotPaused checkPid(_pid) {
         require(_pid != 0, "deposite not support ETH staking");
         Pool storage pool_ = pool[_pid];
-        require(
-            _amount > pool_.minDepositAmount,
-            "deposite amount is too small"
-        );
+        require(_amount > pool_.minDepositAmount, "deposite amount is too small");
         if (_amount > 0) {
-            IERC20(pool_.stTokenAddress).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _amount
-            );
+            IERC20(pool_.stTokenAddress).safeTransferFrom(msg.sender, address(this), _amount);
         }
 
         _deposite(_pid, _amount);
     }
 
-    function unstake(
-        uint256 _pid,
-        uint256 _amount
-    ) public whenNotPaused checkPid(_pid) whennotWithdrawPaused {
+    function unstake(uint256 _pid, uint256 _amount) public whenNotPaused checkPid(_pid) whennotWithdrawPaused {
         Pool storage pool_ = pool[_pid];
         User storage user_ = user[_pid][msg.sender];
 
@@ -507,9 +398,7 @@ contract MetaNodeStake is
 
         updatePool(_pid);
 
-        uint256 pendingMetaNode_ = (user_.stAmount * pool_.accMetaNodePerST) /
-            (1 ether) -
-            user_.finishedMetaNode;
+        uint256 pendingMetaNode_ = (user_.stAmount * pool_.accMetaNodePerST) / (1 ether) - user_.finishedMetaNode;
 
         if (pendingMetaNode_ > 0) {
             user_.pendingMetaNode = user_.pendingMetaNode + pendingMetaNode_;
@@ -518,24 +407,17 @@ contract MetaNodeStake is
         if (_amount > 0) {
             user_.stAmount = user_.stAmount - _amount;
             user_.requests.push(
-                UnstakeRequest({
-                    amount: _amount,
-                    unlockBlocks: block.number + pool_.unstakeLockedBlocks
-                })
+                UnstakeRequest({amount: _amount, unlockBlocks: block.number + pool_.unstakeLockedBlocks})
             );
         }
 
         pool_.stTokenAmount -= _amount;
-        user_.finishedMetaNode =
-            (user_.stAmount * pool_.accMetaNodePerST) /
-            1 ether;
+        user_.finishedMetaNode = (user_.stAmount * pool_.accMetaNodePerST) / 1 ether;
 
         emit RequestUnstake(msg.sender, _pid, _amount);
     }
 
-    function withdraw(
-        uint256 _pid
-    ) public checkPid(_pid) whenNotPaused whennotWithdrawPaused {
+    function withdraw(uint256 _pid) public checkPid(_pid) whenNotPaused whennotWithdrawPaused {
         Pool storage pool_ = pool[_pid];
         User storage user_ = user[_pid][msg.sender];
 
@@ -559,10 +441,7 @@ contract MetaNodeStake is
             if (pool_.stTokenAddress == address(0)) {
                 _safeETHTransfer(msg.sender, pendingWithdraw_);
             } else {
-                IERC20(pool_.stTokenAddress).safeTransfer(
-                    msg.sender,
-                    pendingWithdraw_
-                );
+                IERC20(pool_.stTokenAddress).safeTransfer(msg.sender, pendingWithdraw_);
             }
         }
 
@@ -580,16 +459,11 @@ contract MetaNodeStake is
     }
 
     function _safeETHTransfer(address _to, uint256 _amount) internal {
-        (bool success, bytes memory data) = address(_to).call{value: _amount}(
-            ""
-        );
+        (bool success, bytes memory data) = address(_to).call{value: _amount}("");
         require(success, "ETH transfer call failed");
 
         if (data.length > 0) {
-            require(
-                abi.decode(data, (bool)),
-                "ETH transfer operation not succeed"
-            );
+            require(abi.decode(data, (bool)), "ETH transfer operation not succeed");
         }
     }
 
