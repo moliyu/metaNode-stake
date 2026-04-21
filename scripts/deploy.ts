@@ -5,7 +5,11 @@ const connection = await network.connect()
 const { ethers } = connection
 
 const [signer] = await ethers.getSigners()
-const metaNodeTokenAddress = "0x5ac237DB8365410a54B4f90FBC40FB9D8F42BCAe"
+const metaTokenContract = await ethers.getContractFactory("MetaNodeToken")
+const metaToken = await metaTokenContract.deploy()
+await metaToken.waitForDeployment()
+const metaNodeTokenAddress = await metaToken.getAddress()
+console.log("%c Line:12 🌮 metaNodeTokenAddress", "color:#b03734", metaNodeTokenAddress)
 
 const metaNodeStake = await ethers.getContractFactory("MetaNodeStake")
 
@@ -17,9 +21,14 @@ const upgradeApi = await upgrades(hre, connection)
 const stake = await upgradeApi.deployProxy(
   metaNodeStake,
   [metaNodeTokenAddress, startBlock, endBlock, metaNodePerBlock],
-  { kind: "uups", initializer: "initialize" },
+  { kind: "uups", initializer: "initialize" }
 )
 await stake.waitForDeployment()
 const stakeAddress = await stake.getAddress()
+console.log("%c Line:28 🍕 stakeAddress", "color:#ea7e5c", stakeAddress)
 
-console.log("MetaNodeStake contract deployed to:", stakeAddress)
+const tokenAmount = await metaToken.balanceOf(signer.address)
+const tx = await metaToken.transfer(stakeAddress, tokenAmount)
+await tx.wait()
+
+console.log("transfer", ethers.formatUnits(tokenAmount, 18))
